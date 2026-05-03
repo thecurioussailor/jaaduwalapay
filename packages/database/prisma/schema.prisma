@@ -1,0 +1,164 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Merchant
+model Merchant {
+  id                String   @id @default(cuid())
+  name              String
+  slug              String   @unique
+  email             String   @unique
+  passwordHash      String
+  walletAddress     String   @unique
+  logoUrl           String?
+  coverImageUrl     String?
+  description       String?
+  address           String?
+  city              String?
+  phone             String?
+  cuisineType       String?
+  openingHours      String?
+  isActive          Boolean  @default(true)
+  isVerified        Boolean  @default(false)
+  loyaltyMultiplier Float    @default(1.0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  categories MenuCategory[]
+  menuItems  MenuItem[]
+  tables     Table[]
+  orders     Order[]
+
+  @@map("merchants")
+}
+
+
+// ─────────────────────────────────────────────
+// MENU
+// ─────────────────────────────────────────────
+
+model MenuCategory {
+  id         String   @id @default(cuid())
+  merchantId String
+  name       String
+  emoji      String?
+  sortOrder  Int      @default(0)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  merchant  Merchant   @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  menuItems MenuItem[]
+
+  @@map("menu_categories")
+}
+
+model MenuItem {
+  id          String   @id @default(cuid())
+  merchantId  String
+  categoryId  String?
+  name        String
+  description String?
+  priceUsdc   Float
+  imageUrl    String?
+  isAvailable Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  merchant   Merchant      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  category   MenuCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  orderItems OrderItem[]
+
+  @@map("menu_items")
+}
+
+
+// ─────────────────────────────────────────────
+// TABLES
+// ─────────────────────────────────────────────
+
+model Table {
+  id          String   @id @default(cuid())
+  merchantId  String
+  tableNumber Int
+  label       String?
+  qrCodeUrl   String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  orders   Order[]
+
+  @@unique([merchantId, tableNumber])
+  @@map("tables")
+}
+
+// ─────────────────────────────────────────────
+// ORDERS
+// ─────────────────────────────────────────────
+
+model Order {
+  id             String      @id @default(cuid())
+  merchantId     String
+  tableId        String?
+  tableNumber    Int?
+  customerWallet String
+  totalUsdc      Float
+  loyaltyEarned  Int         @default(0)
+  txSignature    String?     @unique
+  status         OrderStatus @default(PENDING)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  merchant   Merchant    @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  table      Table?      @relation(fields: [tableId], references: [id], onDelete: SetNull)
+  orderItems OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id         String @id @default(cuid())
+  orderId    String
+  menuItemId String
+  name       String
+  priceUsdc  Float
+  quantity   Int    @default(1)
+
+  order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id])
+
+  @@map("order_items")
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  FAILED
+}
+
+// ─────────────────────────────────────────────
+// KORA RELAY HEALTH (single row)
+// ─────────────────────────────────────────────
+
+model KoraRelay {
+  id               String    @id @default(cuid())
+  solBalance       Float     @default(0)
+  totalTxSponsored Int       @default(0)
+  lastTopUpAt      DateTime?
+  lastCheckedAt    DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@map("kora_relay")
+}
