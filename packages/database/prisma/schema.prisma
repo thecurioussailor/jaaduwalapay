@@ -15,11 +15,11 @@ datasource db {
 // Merchant
 model Merchant {
   id                String   @id @default(cuid())
-  name              String
-  slug              String   @unique
+  name              String?
+  slug              String?  @unique
   email             String   @unique
   passwordHash      String
-  walletAddress     String   @unique
+  walletAddress     String?   @unique
   logoUrl           String?
   coverImageUrl     String?
   description       String?
