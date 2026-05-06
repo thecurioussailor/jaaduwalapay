@@ -23,11 +23,12 @@ export const AuthController = {
       )
       res.status(201).json(result)
     } catch (err: any) {
+      console.log(err);
       if (err.message === 'EMAIL_TAKEN') {
         res.status(409).json({ error: 'Email already registered' })
         return
       }
-      res.status(500).json({ error: 'Internal server error' })
+      res.status(500).json({ error: 'Internal server error ' })
     }
   },
 
