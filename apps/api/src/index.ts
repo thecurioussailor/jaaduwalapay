@@ -2,6 +2,9 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import authRoutes from './routes/auth.routes';
+import merchantRoutes from './routes/merchant.routes';
+import onboardingRoutes from './routes/onboarding.routes';
+import menuRoutes from './routes/menu.routes';
 const app = express();
 
 app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000', credentials: true }));
@@ -12,6 +15,10 @@ app.get('/health', (_, res) => res.json({
 }));
 
 app.use('/auth', authRoutes);
+app.use('/merchant', merchantRoutes);
+app.use('/merchant/onboarding', onboardingRoutes);
+app.use('/merchant/menu', menuRoutes);
+
 let port = 3001;
 
 app.listen(port, () => {

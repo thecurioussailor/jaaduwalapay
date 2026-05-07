@@ -31,7 +31,7 @@ export default function SignupPage() {
       }
 
       localStorage.setItem("token", data.token);
-      router.push("/dashboard");
+      router.push("/onboarding/profile");
     } catch {
       setError("Could not reach the server. Try again.");
     } finally {

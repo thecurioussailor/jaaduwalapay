@@ -20,6 +20,8 @@ model Merchant {
   email             String   @unique
   passwordHash      String
   walletAddress     String?   @unique
+  walletVerified    Boolean   @default(false)
+  walletLinkedAt    DateTime?
   logoUrl           String?
   coverImageUrl     String?
   description       String?
@@ -36,12 +38,25 @@ model Merchant {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  categories MenuCategory[]
-  menuItems  MenuItem[]
-  tables     Table[]
-  orders     Order[]
+  categories       MenuCategory[]
+  menuItems        MenuItem[]
+  tables           Table[]
+  orders           Order[]
+  walletChallenge  WalletChallenge?
 
   @@map("merchants")
+}
+
+model WalletChallenge {
+  id         String   @id @default(cuid())
+  merchantId String   @unique
+  nonce      String   @unique
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+
+  merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@map("wallet_challenges")
 }
 
 

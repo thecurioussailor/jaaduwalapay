@@ -12,9 +12,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@repo/db": "workspace:*",
     "@clerk/express": "^2.1.12",
+    "@repo/db": "workspace:*",
+    "@solana/kit": "^6.9.0",
     "bcryptjs": "^3.0.3",
+    "bs58": "^6.0.0",
     "cors": "^2.8.6",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
