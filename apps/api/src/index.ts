@@ -5,6 +5,8 @@ import authRoutes from './routes/auth.routes';
 import merchantRoutes from './routes/merchant.routes';
 import onboardingRoutes from './routes/onboarding.routes';
 import menuRoutes from './routes/menu.routes';
+import tableRoutes from './routes/table.routes';
+import publicRoutes from './routes/public.routes';
 const app = express();
 
 app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000', credentials: true }));
@@ -18,6 +20,8 @@ app.use('/auth', authRoutes);
 app.use('/merchant', merchantRoutes);
 app.use('/merchant/onboarding', onboardingRoutes);
 app.use('/merchant/menu', menuRoutes);
+app.use('/merchant/tables', tableRoutes);
+app.use('/public', publicRoutes);
 
 let port = 3001;
 
