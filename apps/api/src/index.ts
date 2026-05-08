@@ -7,6 +7,7 @@ import onboardingRoutes from './routes/onboarding.routes';
 import menuRoutes from './routes/menu.routes';
 import tableRoutes from './routes/table.routes';
 import publicRoutes from './routes/public.routes';
+import payRoutes from './routes/pay.routes';
 const app = express();
 
 app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000', credentials: true }));
@@ -22,6 +23,7 @@ app.use('/merchant/onboarding', onboardingRoutes);
 app.use('/merchant/menu', menuRoutes);
 app.use('/merchant/tables', tableRoutes);
 app.use('/public', publicRoutes);
+app.use('/pay', payRoutes);
 
 let port = 3001;
 
