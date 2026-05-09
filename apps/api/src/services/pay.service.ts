@@ -50,7 +50,7 @@ export const PayService = {
     if (menuItems.length !== data.items.length) throw new Error('INVALID_ITEMS')
 
     const totalUsdc = data.items.reduce((sum, orderItem) => {
-      const menuItem = menuItems.find(m => m.id === orderItem.menuItemId)!
+      const menuItem = menuItems.find((m: { id: string; priceUsdc: number }) => m.id === orderItem.menuItemId)!
       return sum + menuItem.priceUsdc * orderItem.quantity
     }, 0)
 
@@ -107,7 +107,7 @@ export const PayService = {
       lastValidBlockHeight: lastValidBlockHeight.toString(),
       feePayer: FEE_PAYER_PUBKEY,
       merchantWallet: merchant.walletAddress,
-      menuItems: menuItems.map(m => ({
+      menuItems: menuItems.map((m: { id: string; name: string; priceUsdc: number }) => ({
         id: m.id,
         name: m.name,
         priceUsdc: m.priceUsdc

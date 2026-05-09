@@ -63,7 +63,7 @@ export const MenuController = {
     if (!parsed.success) { res.status(400).json({ error: parsed.error.flatten() }); return }
 
     try {
-      const result = await MenuService.updateItem(req.merchantId, req.params.itemId!, parsed.data)
+      const result = await MenuService.updateItem(req.merchantId, req.params.itemId as string, parsed.data)
       res.json(result)
     } catch (err: any) {
       if (err.message === 'NOT_FOUND') { res.status(404).json({ error: 'Item not found' }); return }
@@ -73,7 +73,7 @@ export const MenuController = {
 
   async deleteItem(req: Request, res: Response) {
     try {
-      await MenuService.deleteItem(req.merchantId, req.params.itemId!)
+      await MenuService.deleteItem(req.merchantId, req.params.itemId as string)
       res.status(204).send()
     } catch (err: any) {
       if (err.message === 'NOT_FOUND') { res.status(404).json({ error: 'Item not found' }); return }
@@ -83,7 +83,7 @@ export const MenuController = {
 
   async deleteCategory(req: Request, res: Response) {
     try {
-      await MenuService.deleteCategory(req.merchantId, req.params.categoryId!)
+      await MenuService.deleteCategory(req.merchantId, req.params.categoryId as string)
       res.status(204).send()
     } catch (err: any) {
       if (err.message === 'NOT_FOUND') { res.status(404).json({ error: 'Category not found' }); return }

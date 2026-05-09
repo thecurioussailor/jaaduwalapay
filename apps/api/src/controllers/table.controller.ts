@@ -35,7 +35,7 @@ export const TableController = {
 
   async deleteTable(req: Request, res: Response) {
     try {
-      await TableService.deleteTable(req.merchantId, req.params.tableId!)
+      await TableService.deleteTable(req.merchantId, req.params.tableId as string)
       res.status(204).send()
     } catch (err: any) {
       if (err.message === 'NOT_FOUND') { res.status(404).json({ error: 'Table not found' }); return }
