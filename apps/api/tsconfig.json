@@ -1,14 +1,13 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
+    "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "outDir": "./dist",
     "rootDir": "./src",
     "strict": true,
     "skipLibCheck": true,
-    "paths": {
-      "@repo/db": ["../../packages/database/dist/index.d.ts"]
-    }
+    "esModuleInterop": true,
+    "resolveJsonModule": true
   }
 }
