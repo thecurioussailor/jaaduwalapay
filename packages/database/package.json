@@ -11,6 +11,11 @@
       "types": "./dist/index.d.ts"
     }
   },
+  "typesVersions": {
+    "*": {
+      "*": ["./dist/index.d.ts"]
+    }
+  },
   "scripts": {
     "build": "prisma generate && tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
