@@ -2,13 +2,6 @@ import { prisma } from '../lib/prisma'
 import {
   address,
   createSolanaRpc,
-  createTransactionMessage,
-  setTransactionMessageFeePayer,
-  setTransactionMessageLifetimeUsingBlockhash,
-  appendTransactionMessageInstructions,
-  compileTransaction,
-  getBase64EncodedWireTransaction,
-  pipe,
   type Address,
 } from '@solana/kit'
 import {
@@ -79,7 +72,10 @@ export const PayService = {
     const splInstructions = []
 
     // create merchant ATA if it doesn't exist
-    const merchantAtaInfo = await rpc.getAccountInfo(toAddress(merchantAta)).send()
+    const merchantAtaInfo = await rpc.getAccountInfo(
+      toAddress(merchantAta),
+      { encoding: 'base64' }
+    ).send()
     if (!merchantAtaInfo.value) {
       splInstructions.push(
         createAssociatedTokenAccountInstruction(
@@ -105,36 +101,26 @@ export const PayService = {
       )
     )
 
-    // convert spl-token instructions to @solana/kit IInstruction format
-    const kitInstructions = splInstructions.map(ix => ({
-      programAddress: address(ix.programId.toBase58()),
-      accounts: ix.keys.map(k => ({
-        address: address(k.pubkey.toBase58()),
-        role: (k.isSigner && k.isWritable ? 3 : k.isSigner ? 2 : k.isWritable ? 1 : 0) as 0 | 1 | 2 | 3,
-      })),
-      data: ix.data as Uint8Array,
-    }))
-
-    // build transaction message using @solana/kit
-    const txMessage = pipe(
-      createTransactionMessage({ version: 0 }),
-      tx => setTransactionMessageFeePayer(address(FEE_PAYER_PUBKEY), tx),
-      tx => setTransactionMessageLifetimeUsingBlockhash({ blockhash, lastValidBlockHeight }, tx),
-      tx => appendTransactionMessageInstructions(kitInstructions, tx),
-    )
-
-    const compiled = compileTransaction(txMessage)
-    const serialized = getBase64EncodedWireTransaction(compiled)
-
     return {
       totalUsdc,
-      serializedTx: serialized,
       blockhash,
+      lastValidBlockHeight: lastValidBlockHeight.toString(),
+      feePayer: FEE_PAYER_PUBKEY,
       merchantWallet: merchant.walletAddress,
       menuItems: menuItems.map(m => ({
         id: m.id,
         name: m.name,
         priceUsdc: m.priceUsdc
+      })),
+      // raw instructions for frontend to build tx
+      instructions: splInstructions.map(ix => ({
+        programId: ix.programId.toBase58(),
+        keys: ix.keys.map(k => ({
+          pubkey: k.pubkey.toBase58(),
+          isSigner: k.isSigner,
+          isWritable: k.isWritable,
+        })),
+        data: Buffer.from(ix.data).toString('base64'),
       }))
     }
   },
@@ -147,7 +133,10 @@ export const PayService = {
         jsonrpc: '2.0',
         id: 1,
         method: 'signAndSendTransaction',
-        params: { transaction: serializedTx }
+        params: {
+          transaction: serializedTx,
+          skipPreflight: true,
+        }
       })
     })
 

@@ -4,7 +4,13 @@ import { useEffect, useState } from "react";
 import { ShoppingCart, Plus, Minus, X, Loader2, CheckCircle2 } from "lucide-react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
-import { Transaction } from "@solana/web3.js";
+import {
+  VersionedTransaction,
+  TransactionMessage,
+  PublicKey,
+  TransactionInstruction,
+  AccountMeta,
+} from "@solana/web3.js";
 
 const API = "http://localhost:3001";
 
@@ -258,7 +264,7 @@ function CartSheet({ items, total, merchantId, tableId, onClose, onAdd, onRemove
   onRemove: (itemId: string) => void;
   onPaid: () => void;
 }) {
-  const { publicKey, signTransaction, connected } = useWallet();
+  const { publicKey, signTransaction, connected, select, connect, wallet } = useWallet();
   const { setVisible } = useWalletModal();
   const [payStatus, setPayStatus] = useState<"idle" | "building" | "signing" | "confirming" | "done">("idle");
   const [payError, setPayError] = useState("");
@@ -275,16 +281,25 @@ function CartSheet({ items, total, merchantId, tableId, onClose, onAdd, onRemove
   }, [connected, publicKey, pendingPay]);
 
   async function handlePay() {
+    console.log('handlePay called', { connected, publicKey: publicKey?.toBase58(), hasSignTx: !!signTransaction });
     setPayError("");
 
     if (!connected || !publicKey || !signTransaction) {
+      console.log('wallet not connected — selecting phantom and connecting');
       setPendingPay(true);
-      setVisible(true);
+      try {
+        select('Phantom' as any);
+        await connect();
+      } catch {
+        // if connect() fails (no extension), fall back to modal
+        setVisible(true);
+      }
       return;
     }
 
     try {
       setPayStatus("building");
+      console.log('building tx for wallet:', publicKey.toBase58());
 
       // 1. build transaction on backend
       const buildRes = await fetch(`${API}/pay/build`, {
@@ -298,13 +313,35 @@ function CartSheet({ items, total, merchantId, tableId, onClose, onAdd, onRemove
         })
       });
       const buildData = await buildRes.json();
+      console.log('build response:', buildRes.status, buildData);
       if (!buildRes.ok) { setPayError(buildData.error ?? "Failed to build transaction"); setPayStatus("idle"); return; }
 
-      // 2. deserialize + sign with customer wallet
+      // 2. build tx from instructions with fresh blockhash + sign
       setPayStatus("signing");
-      const tx = Transaction.from(Buffer.from(buildData.serializedTx, "base64"));
+      console.log('requesting signature from wallet...');
+
+      const instructions: TransactionInstruction[] = buildData.instructions.map((ix: any) =>
+        new TransactionInstruction({
+          programId: new PublicKey(ix.programId),
+          keys: ix.keys.map((k: any): AccountMeta => ({
+            pubkey: new PublicKey(k.pubkey),
+            isSigner: k.isSigner,
+            isWritable: k.isWritable,
+          })),
+          data: Buffer.from(ix.data, 'base64'),
+        })
+      );
+
+      const message = new TransactionMessage({
+        payerKey: new PublicKey(buildData.feePayer),
+        recentBlockhash: buildData.blockhash,
+        instructions,
+      }).compileToV0Message();
+
+      const tx = new VersionedTransaction(message);
       const signedTx = await signTransaction(tx);
-      const serializedSigned = Buffer.from(signedTx.serialize({ requireAllSignatures: false })).toString("base64");
+      console.log('tx signed, sending to backend...');
+      const serializedSigned = Buffer.from(signedTx.serialize()).toString("base64");
 
       // 3. send signed tx to backend → kora co-signs + broadcasts
       setPayStatus("confirming");
