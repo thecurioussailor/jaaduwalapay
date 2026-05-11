@@ -22,7 +22,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    fetch("http://localhost:3001/merchant/me", {
+    fetch(process.env.NEXT_PUBLIC_API_URL + "/merchant/me", {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())

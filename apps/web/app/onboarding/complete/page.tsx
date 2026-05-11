@@ -15,7 +15,7 @@ export default function CompletePage() {
     setError('')
 
     try {
-      const res = await fetch('http://localhost:3001/merchant/onboarding/complete', {
+      const res = await fetch(process.env.NEXT_PUBLIC_API_URL + '/merchant/onboarding/complete', {
         method: 'PATCH',
         headers: { Authorization: `Bearer ${getToken()}` }
       })

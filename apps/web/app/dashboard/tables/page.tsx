@@ -5,7 +5,7 @@ import { Plus, QrCode, Trash2, Download, X } from "lucide-react";
 import QRCode from "qrcode";
 import { getToken } from "../../../lib/auth";
 
-const API = "http://localhost:3001";
+const API = process.env.NEXT_PUBLIC_API_URL + "";
 const BASE_URL = "http://localhost:3000";
 
 type Table = {

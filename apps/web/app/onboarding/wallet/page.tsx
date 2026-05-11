@@ -28,7 +28,7 @@ export default function WalletPage() {
 
       // get challenge from backend
       setStatus('signing')
-      const challengeRes = await fetch('http://localhost:3001/merchant/onboarding/wallet/challenge', {
+      const challengeRes = await fetch(process.env.NEXT_PUBLIC_API_URL + '/merchant/onboarding/wallet/challenge', {
         headers: { Authorization: `Bearer ${getToken()}` }
       })
       const { message } = await challengeRes.json()
@@ -42,7 +42,7 @@ export default function WalletPage() {
 
       // verify on backend
       setStatus('verifying')
-      const verifyRes = await fetch('http://localhost:3001/merchant/onboarding/wallet/verify', {
+      const verifyRes = await fetch(process.env.NEXT_PUBLIC_API_URL + '/merchant/onboarding/wallet/verify', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Plus, UtensilsCrossed, Pencil, Trash2, X, ChevronDown, ChevronUp } from "lucide-react";
 import { getToken } from "../../../lib/auth";
 
-const API = "http://localhost:3001";
+const API = process.env.NEXT_PUBLIC_API_URL + "";
 
 type MenuItem = {
   id: string;

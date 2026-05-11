@@ -16,7 +16,7 @@ export default function ProfilePage() {
     setError('')
 
     try {
-      const res = await fetch('http://localhost:3001/merchant/onboarding/profile', {
+      const res = await fetch(process.env.NEXT_PUBLIC_API_URL + '/merchant/onboarding/profile', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
