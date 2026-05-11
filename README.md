@@ -1,159 +1,107 @@
-# Turborepo starter
+# Jaaduwalapay
 
-This Turborepo starter is maintained by the Turborepo core team.
+Gasless restaurant payments on Solana. Customers pay in USDC without holding any SOL — the Kora relay sponsors all transaction fees.
 
-## Using this example
+## What it does
 
-Run the following command:
+Restaurants onboard with a Phantom wallet and build their menu. Each table gets a QR code. Customers scan the QR, browse the menu, and pay in USDC directly from their Solana wallet. No SOL needed, no gas fees, instant settlement.
 
-```sh
-npx create-turbo@latest
+## Live Demo
+
+- **Merchant dashboard**: https://jaaduwalapay-web.vercel.app
+- **API**: https://api.ashutoshsagar.com
+
+## How it works
+
+1. Merchant signs up, verifies wallet ownership via Ed25519 signature
+2. Merchant creates menu categories + items (priced in USDC)
+3. Merchant creates tables — each gets a unique QR code
+4. Customer scans QR → sees menu → adds items to cart → connects Phantom → pays
+5. Frontend builds a Solana v0 transaction with USDC transfer instructions
+6. Kora relay co-signs as fee payer — customer pays zero SOL
+7. Transaction confirmed on-chain, order saved to DB, merchant sees it in dashboard
+
+## Tech stack
+
+| Layer | Technology |
+|-------|-----------|
+| Frontend | Next.js 15, Tailwind CSS, `@solana/wallet-adapter-react` |
+| Backend | Express.js, TypeScript, tsx |
+| Database | PostgreSQL (Neon) via Prisma 7 |
+| Payments | USDC SPL token, `@solana/spl-token`, `@solana/web3.js` |
+| Gasless relay | [Kora](https://github.com/solana-foundation/kora) by Solana Foundation |
+| Monorepo | Turborepo + pnpm workspaces |
+| Deployment | Vercel (frontend), Civo VPS (API + Kora via Docker) |
+
+## Architecture
+
+```
+apps/
+  web/          # Next.js merchant dashboard + customer ordering page
+  api/          # Express REST API
+packages/
+  database/     # Prisma schema + generated client (@repo/db)
+kora.toml       # Kora relay configuration
+kora.Dockerfile # Docker build for Kora relay
 ```
 
-## What's inside?
+## Key flows
 
-This Turborepo includes the following packages/apps:
+### Gasless payment
+The frontend builds a versioned Solana transaction with:
+- USDC transfer instruction (customer → merchant wallet)
+- Compute budget instruction
 
-### Apps and Packages
+Sends to backend `/pay/build` → backend returns instructions + blockhash → frontend signs with Phantom → sends to `/pay/confirm` → backend submits to Kora relay which adds its fee payer signature → transaction lands on-chain.
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+### Wallet verification
+Merchant proves wallet ownership: backend issues a nonce challenge → merchant signs with Phantom → backend verifies Ed25519 signature via Web Crypto API.
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+## Local development
 
-### Utilities
+```bash
+# Install dependencies
+pnpm install
 
-This Turborepo has some additional tools already setup for you:
+# Generate Prisma client
+pnpm --filter @repo/db exec prisma generate
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+# Run database migrations
+pnpm --filter @repo/db exec prisma db push
 
-### Build
+# Start API
+cd apps/api && pnpm dev
 
-To build all apps and packages, run the following command:
+# Start frontend
+cd apps/web && pnpm dev
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo build
+# Start Kora relay
+docker build -f kora.Dockerfile -t jaaduwalapay-kora .
+docker run -p 8080:8080 \
+  -e SIGNER_MEMORY_PRIVATE_KEY=<your-fee-payer-private-key> \
+  -e RPC_URL=https://api.devnet.solana.com \
+  jaaduwalapay-kora
 ```
 
-Without global `turbo`, use your package manager:
+## Environment variables
 
-```sh
-cd my-turborepo
-npx turbo build
-pnpm dlx turbo build
-pnpm exec turbo build
+**`apps/api/.env`**
+```
+DATABASE_URL=postgresql://...
+JWT_SECRET=...
+KORA_URL=http://localhost:8080
+KORA_FEE_PAYER_PUBKEY=...
+USDC_MINT=4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU
+SOLANA_RPC=https://api.devnet.solana.com
+FRONTEND_URL=http://localhost:3000
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo build --filter=docs
+**`apps/web/.env.local`**
+```
+NEXT_PUBLIC_API_URL=http://localhost:3001
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
-Without global `turbo`:
+## Built for
 
-```sh
-npx turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
-
-### Develop
-
-To develop all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo dev
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo dev
-pnpm exec turbo dev
-pnpm exec turbo dev
-```
-
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo dev --filter=web
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo login
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo login
-pnpm exec turbo login
-pnpm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo link
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo link
-pnpm exec turbo link
-pnpm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+[Colosseum Frontier Hackathon](https://arena.colosseum.org) — May 2026. Solo project.
