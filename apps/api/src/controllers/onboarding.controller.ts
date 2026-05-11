@@ -66,6 +66,7 @@ export const OnboardingController = {
         res.status(400).json({ error: 'Signature verification failed' })
         return
       }
+      console.error('verifyWallet error:', err)
       res.status(500).json({ error: 'Internal server error' })
     }
   },
