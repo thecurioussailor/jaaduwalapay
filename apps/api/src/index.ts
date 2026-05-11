@@ -10,7 +10,7 @@ import publicRoutes from './routes/public.routes';
 import payRoutes from './routes/pay.routes';
 const app = express();
 
-app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000', credentials: true }));
+app.use(cors({ origin: [process.env.FRONTEND_URL || 'http://localhost:3000', 'https://jaaduwalapay-web.vercel.app'], credentials: true }));
 app.use(express.json());
 
 app.get('/health', (_, res) => res.json({
