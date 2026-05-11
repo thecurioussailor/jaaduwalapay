@@ -286,7 +286,12 @@ function CartSheet({ items, total, merchantId, tableId, onClose, onAdd, onRemove
 
     if (!connected || !publicKey || !signTransaction) {
       setPendingPay(true);
-      setVisible(true);
+      try {
+        select('Phantom' as any);
+        await connect();
+      } catch {
+        setVisible(true);
+      }
       return;
     }
 
