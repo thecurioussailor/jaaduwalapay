@@ -285,15 +285,8 @@ function CartSheet({ items, total, merchantId, tableId, onClose, onAdd, onRemove
     setPayError("");
 
     if (!connected || !publicKey || !signTransaction) {
-      console.log('wallet not connected — selecting phantom and connecting');
       setPendingPay(true);
-      try {
-        select('Phantom' as any);
-        await connect();
-      } catch {
-        // if connect() fails (no extension), fall back to modal
-        setVisible(true);
-      }
+      setVisible(true);
       return;
     }
 
